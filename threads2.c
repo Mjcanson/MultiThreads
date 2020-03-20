@@ -1,200 +1,217 @@
-/************************************************************** * Class: CSC-415-0# Spring 2020
-* Name: Michael John Canson
-* Student ID:920601003
-* Project:Assignment 2 - Word Blast
-* File: threads2.c
-*
-* Description: 
-*
-**************************************************************/
+/************************************************************** * Class:
+ *CSC-415-0# Spring 2020 Name: Michael John Canson Student ID:920601003
+ * Project:Assignment 2 - Word Blast
+ * File: threads2.c
+ *
+ * Description:
+ *
+ **************************************************************/
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <time.h>
-#include <pthread.h>
+#include <unistd.h>
 
-pthread_mutex_t lock; 
+pthread_mutex_t lock;
 
 static int testNum = 0;
+static int test = 0;
 
 typedef struct Thread_Args {
     long start;
     long end;
+    int T;
     char FileName[20];
-}threadArgs;
+} threadArgs;
 
-void* FileReader(void * targs) {
-        pthread_mutex_lock(&lock); 
+void *FileReader(void *targs) {
+    pthread_mutex_lock(&lock);
 
-        printf(" ======== FileReader called: %d ========== \n",testNum++);
+    // printf(" ======== FileReader called: %d ========== \n", testNum++);
 
-        printf("Hello World!!! \n");
+    // printf("Hello World!!! \n");
 
-    // // char buffer[] = 0;
-    // char delims[] = " ,-[]#/.;:!?\t\n\a\r";
+    // char buffer[] = 0; “
+    char delims[] = " “,()-[]#/.;:!?\"\t\n\a\r";
     // int i = 0;
-    // int length;
+    int length;
 
-    threadArgs* args = (threadArgs*) targs;
-    
-    long s = (long ) args->start;
-    printf("s: %ld\n", s); //TEST
-    
-    long e = (long ) args->end;
-    printf("e: %ld\n", e); //TEST
+    threadArgs *args = (threadArgs *)targs;
 
-    char* Fname = (char *) args->FileName;
-    printf("Fname: %s\n", Fname); //TEST
+    long s = (long)args->start;
+    // printf("s: %ld\n", s);  // TEST
+
+    long e = (long)args->end;
+    // printf("e: %ld\n", e);  // TEST
+
+    char *Fname = (char *)args->FileName;
+
+    int T = (int) args->T;
+    printf("Fname: %s\n", Fname);  // TEST
+
+
+    char *buffer = 0;
+    FILE *f = fopen(Fname, "r");
+
+    if (f == NULL) {
+        printf("Error opening file\n");
+        exit(1);
+    }
+
+    if (f) {
+       
+        long size = e - s;
+
+        fseek(f, s, SEEK_SET);
+        // printf("Fseek2: %ld\n", ftell(f));
+
+        buffer = malloc(size);  // shouldnt each thread have its own array in stack?
+
+        if (buffer) {
+            fread(buffer, 1 , size, f);  // TODO MAKE SURE YOU GO OVER S+1
+        }
+
+        fclose(f);
+    }
+
+    if (buffer) {
+
+        // start to process your data / ext ract strings here...
+        // char *ptr = strtok_(buffer,delims);
+        char *rest = buffer;
+        char *ptr = strtok_r(rest, delims, &rest);
+
+        while (ptr != NULL) {
+            if(strlen(ptr) >= 6 ) {
+
+                if(strcasecmp(ptr,"andrew")==0)
+                    printf("THREAD[%d] |> %s|\n", testNum++, ptr);
+            }
+            ptr = strtok_r(rest, delims, &rest);
+        }
+        free(rest);
+    }
+    // printf("exited ebuffer. %d \n", testNum);
 
     pthread_mutex_unlock(&lock);
-
-
-    // printf("========================\n");
-
-    // free(args);
-
-    // char * buffer = 0;
-    // FILE * f = fopen(Fname,"r");
-    // if(f == NULL) {
-    //     printf("Error opening file\n");
-    //     exit(1);
-    // }
-
-    // if(f) {
-    //     printf("im here \n");
-    //     fseek (f, 0, SEEK_END);
-    //     // printf("Fseek: %ld\n", ftell(f));
-
-    //     length = ftell(f);
-
-    //     fseek (f, 0, SEEK_SET);
-    //     // printf("Fseek2: %ld\n", ftell(f));
-
-    //     buffer = malloc (length);  // shouldnt each thread have its own array in stack?
-
-        
-    //     if (buffer) {
-
-    //         fread (buffer, s + 1, 20, f); //TODO MAKE SURE YOU GO OVER S+1
-    //     }
-
-    //     fclose (f);
-    //     printf("File closed\n");
-
-    // }
-
-    // if (buffer) {
-    //             printf("here \n");
-
-    //     // start to process your data / extract strings here...
-    //     char *ptr = strtok(buffer,delims);
-
-    //     while (ptr != NULL) {
-    //         printf("THREAD[%d] |> %s|\n", i++ , ptr);
-    //         ptr = strtok(NULL, delims);
-    //     }
-        
-    // }
-    // printf("exited ebuffer. %d \n",i);
 
     return 0;
 }
 
-//Takes text file name and number of desired thread(s) to work on file
+// Takes text file name and number of desired thread(s) to work on file
 void ThreadMaker(char *FileName, long threadCount) {
-
     int nThreads = threadCount;
-    printf("nThreads: %d\n",nThreads);
-    pthread_t threads[nThreads - 1]; //TODO maybe threads doesnt need to be an array
+    printf("nThreads: %d\n", nThreads);  // number of threads
 
-     threadArgs *tArgs;
+    pthread_t
+        threads[nThreads];  // TODO maybe threads doesnt need to be an array
 
-    // threadArgs tArgs;
-    // strcpy(tArgs.FileName,FileName); //set Filename
-    //     printf("FileName %s\n", tArgs.FileName); //TEST
+    threadArgs *tArgs;
     long length = 0;
 
-    FILE * f = fopen(FileName,"r");
+    FILE *f = fopen(FileName, "r");
+    if(f == NULL) {
+        printf("error!!!");
+    }
 
-    if(f) {
-        fseek (f, 0, SEEK_END);
-        length = ftell(f); //total lenght of file
-        printf("lenght: %ld\n" , length);
+    if (f) {
+        fseek(f, 0, SEEK_END);
+        length = ftell(f);                // total lenght of file
+        // printf("lenght: %ld\n", length);  // TEST
 
-        long pLenght = length / nThreads; //how much of the file each thread should work on
+        long pLenght =
+            length /
+            nThreads;  // how much of the file each thread should work on
 
-        printf("pLenght: %ld\n" , pLenght);
-        printf("========================\n");
-        
-        fseek (f, 0, SEEK_SET);
-        pthread_mutex_init(&lock,NULL);
+        // printf("pLenght: %ld\n", pLenght);
+        // printf("========================\n");
 
-        for(int i = 0; i < nThreads; i++) {
+        fseek(f, 0, SEEK_SET);
+        pthread_mutex_init(&lock, NULL);
 
+        for (int i = 0; i < nThreads; i++) {
             tArgs = malloc(sizeof(threadArgs));
-                    printf("============BEGIN============\n");
-            
-            strcpy(tArgs->FileName,FileName); //set Filename
-            printf("FileName %s\n", tArgs->FileName); //TEST
+            // printf("============BEGIN============\n\n");
 
-            tArgs->start =(long) i * pLenght;
-            printf("Start[%d]: %ld\n", i , tArgs->start);
+            strcpy(tArgs->FileName, FileName);         // set Filename
+            // printf("FileName %s\n", tArgs->FileName);  // TEST
+
+            tArgs->start = (long)i * pLenght;
+            // printf("Start[%d]: %ld\n", i, tArgs->start);
 
             tArgs->end = (long)((i * pLenght) + pLenght);
-            printf("End[%d]: %ld\n", i , tArgs->end); // causing seg fault error once it gets to this
             
-            //TODO deal with seg fault error 
+            tArgs->T = (int)i; //TODO DELETE BEFORE SUBMITTING
+
+            // printf("End[%d]: %ld\n", i,
+            //        tArgs->end);  // causing seg fault error once it gets to this
 
             // pthread_mutex_init(&lock,NULL);
 
-           if( pthread_create(&threads[i],NULL,(void *) &FileReader,(void *) tArgs) < 0) {
-               printf("error creating thread!\n");
-           }
+            if (pthread_create(&threads[i], NULL, (void *)&FileReader,
+                               (void *)tArgs) < 0) {
+                printf("error creating thread!\n");
+            }
 
-            //  pthread_join(threads[i], NULL); 
+            // printf("THREAD[%d] CREATED\n\n==", i);  // TEST
+            // printf("==============END==========\n");
 
-
-            printf("THREAD[%d] CREATED\n", i); //TEST
-                                printf("==============END==========\n");
-
-            
-            // free(tArgs); // deallocate 
+            // free(tArgs); // deallocate
         }
 
-        for(int i = 0; i < nThreads; i++) {
-
-            if(pthread_join(threads[i], NULL) == 0) {
-                printf("Thread[%d] successfuly joined.\n", i);
-            } 
-
-        
+        for (int i = 0; i < nThreads; i++) {
+            if (pthread_join(threads[i], NULL) == 0) {
+                // printf("Thread[%d] successfuly joined.\n", i);
+            }
         }
-
-        
-
-    fclose (f);
-    printf("file Closed!\n");
-    } 
+    
+        fclose(f);
+        // printf("file Closed!\n");
+    }
 }
 
-
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
     struct timespec startTime;
     struct timespec endTime;
     clock_gettime(CLOCK_REALTIME, &startTime);
 
+    char UserEntry[1024];
+    char* args[500];
+    char* nThreads;
 
-    char line[] = "WarAndPeace.txt"; //test
-     ThreadMaker(line,4);
+        // printf("Enter FileName (name.txt) and number of threads: ");
+        
+        // if(fgets(UserEntry, sizeof(UserEntry), stdin)==NULL) {
 
-    //YOUR MAIN CODE IN MAIN HERE
-    //TEST FILE READING
-  
+        //  exit(EXIT_SUCCESS);
+
+        // }
+
+        // UserEntry[strlen(UserEntry) - 1] = '\0';
+
+        // int i = 0;
+        // args[0] = strtok(UserEntry, " ");
+        // while (args[i] != NULL) {
+        //     args[++i] = strtok(NULL, " ");
+        // }
+
+        // int n = atoi(args[1]);
+
+        // printf("%d\n",n);
+        // printf("%s\n",args[0]);
+
+    // ThreadMaker(args[0], n);
+
+    ThreadMaker("WarAndPeace.txt", 4);
+
+    // YOUR MAIN CODE IN MAIN HERE
+    // TEST FILE READING
+
     clock_gettime(CLOCK_REALTIME, &endTime);
-    
-    time_t sec = endTime.tv_sec -startTime.tv_sec;
-    long n_sec = endTime.tv_nsec -startTime.tv_nsec;
+
+    time_t sec = endTime.tv_sec - startTime.tv_sec;
+    long n_sec = endTime.tv_nsec - startTime.tv_nsec;
 
     if (endTime.tv_nsec < startTime.tv_nsec) {
         --sec;
