@@ -42,10 +42,14 @@ int getFrequencyOf(char* word) {
     wNode* temp = head;
 
     while(temp != NULL ) {
-                printf("here\n"); 
+                // printf("here\n"); 
 
         if(temp->Word == word) {
+                pthread_mutex_lock(&lock);
+
             frequency++;
+                pthread_mutex_unlock(&lock);
+            // printf("word: %s freq: %d\n",word,frequency);
         }
         temp = temp->next;
     }
@@ -55,33 +59,18 @@ int getFrequencyOf(char* word) {
     return frequency;
 }
 
-void* addToThreadBag (char* word) {    
+void addToThreadBag (char* word) {
 
     wNode *node = malloc (sizeof(wNode));
-    printf("Created new Node\n"); //will create nodes in stack to which is only gonna be accecible per thread
 
-    //  pthread_mutex_lock(&lock);
+    // pthread_mutex_lock(&lock);
     strcpy(node->Word,word);
-        printf("new node copied word: %s \n", node->Word);
         node->next = NULL;
-
-    //if list is empty
-    if(head == NULL) {
-
-        head = node;
-        printf("node next: %s",node->next->Word);
-        
-    }
-
-    
+  
     node->next = head; // adds new node infront
-    // node->count = getFrequencyOf(word);
-    printf("freq: %d\n",node->count );
     head = node;  
-    pthread_mutex_unlock(&lock);
-
-    //add to a bigger bag
-    return 0;
+    //  printf("new node copied word: %s \n", node->Word);
+        // printf("node[%s]->next: %s\n",node->Word,node->next->Word);
 }
 
 
@@ -99,7 +88,7 @@ void *FileReader(void *targs) {
 
     char delims[] = " “,()-[]#/.;:!?\"\t\n\a\r";
     int length;
-    pthread_mutex_lock(&lock);
+    // pthread_mutex_lock(&lock);
 
     threadArgs *args = (threadArgs *)targs;
 
@@ -110,12 +99,12 @@ void *FileReader(void *targs) {
     char *Fname = (char *)args->FileName;
 
     int T = (int) args->T;
-    printf("Fname: %s\n", Fname);  // TEST
+    // printf("Fname: %s\n", Fname);  // TEST
 
 
     char *buffer = 0;
     FILE *f = fopen(Fname, "r");
-    pthread_mutex_unlock(&lock);
+    // pthread_mutex_unlock(&lock);
 
     if (f == NULL) {
         printf("Error opening file\n");
@@ -145,10 +134,11 @@ void *FileReader(void *targs) {
         while (ptr != NULL) {
 
             if(strlen(ptr) >= 6 ) {
-                    // addToThreadBag(ptr);
+                    addToThreadBag(ptr);
                     // printf("HERE!@\n");
-
-                    printf("THREAD[%d] |> %s|\n", T, ptr);
+                    // if(strcasecmp(ptr,"pierre")==0) {
+                    // printf("THREAD[%d] |> %s|\n", testNum++, ptr);
+                    // }
             }
 
             ptr = strtok_r(rest, delims, &rest);
@@ -253,7 +243,19 @@ int main(int argc, char **argv) {
 
     // ThreadMaker(args[0], n);
 
-    ThreadMaker("WarAndPeace.txt", 8);
+        ThreadMaker("WarAndPeace.txt",3);
+    // ThreadMaker("example2.txt", 1);
+
+    wNode* ptr = head;
+    int i = 0;
+    while(ptr != NULL) {
+        i++;
+        printf("node: %s\n" ,ptr->Word );
+        ptr = ptr->next;
+    }
+     printf("Items: %d\n" ,i);
+
+    // ThreadMaker("example.txt", 4);
 
     // YOUR MAIN CODE IN MAIN HERE
     // TEST FILE READING
