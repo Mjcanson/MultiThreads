@@ -33,6 +33,7 @@ typedef struct WordNode {
 
 wNode* head = NULL;
 
+
 int getFrequencyOf(char* word) {
     
     // pthread_mutex_lock(&lock);
@@ -46,7 +47,6 @@ int getFrequencyOf(char* word) {
 
         if(temp->Word == word) {
                 pthread_mutex_lock(&lock);
-
             frequency++;
                 pthread_mutex_unlock(&lock);
             // printf("word: %s freq: %d\n",word,frequency);
@@ -66,7 +66,8 @@ void addToThreadBag (char* word) {
     // pthread_mutex_lock(&lock);
     strcpy(node->Word,word);
         node->next = NULL;
-  
+        node->count = 1;
+    
     node->next = head; // adds new node infront
     head = node;  
     //  printf("new node copied word: %s \n", node->Word);
@@ -134,20 +135,38 @@ void *FileReader(void *targs) {
         while (ptr != NULL) {
 
             if(strlen(ptr) >= 6 ) {
+
                     addToThreadBag(ptr);
-                    // printf("HERE!@\n");
-                    // if(strcasecmp(ptr,"pierre")==0) {
-                    // printf("THREAD[%d] |> %s|\n", testNum++, ptr);
-                    // }
+                   
             }
 
             ptr = strtok_r(rest, delims, &rest);
         }
+        pthread_mutex_lock(&lock);
+        wNode* cur = head;
+
+        while(cur != NULL) {
+            int found = 0;
+            wNode* temp = cur->next;
+
+            //TODO While loop should terminate when first occurence of word is found
+            while(found && temp != NULL) {
+                if(strcasecmp(cur->Word,temp->Word) == 0) {
+                    
+                    cur->count += temp->count;
+                    found = 1;
+                }
+                temp = temp->next;
+            }
+            // printf("THREAD[%d] WORD: %s, COUNT: %d\n",T,cur->Word,cur->count);
+
+             cur = cur->next;
+        }
+        pthread_mutex_unlock(&lock);
+
 
         free(rest);
     }
-
-    // pthread_mutex_unlock(&lock);
 
     return 0;
 }
@@ -243,17 +262,34 @@ int main(int argc, char **argv) {
 
     // ThreadMaker(args[0], n);
 
-        ThreadMaker("WarAndPeace.txt",3);
-    // ThreadMaker("example2.txt", 1);
+        // ThreadMaker("WarAndPeace.txt",2);
+    ThreadMaker("example2.txt", 2);
 
-    wNode* ptr = head;
-    int i = 0;
-    while(ptr != NULL) {
-        i++;
-        printf("node: %s\n" ,ptr->Word );
-        ptr = ptr->next;
-    }
-     printf("Items: %d\n" ,i);
+    // wNode* ptr = head;
+    // int i = 0;
+
+    // while(ptr != NULL) {    
+    //     wNode* wItr = ptr->next;
+    //     // i++;
+    //     if(strlen(ptr->Word) >=6) {
+    //         while(wItr != NULL) {
+
+    //             if(strcasecmp(ptr->Word,wItr->Word)==0) {
+                    
+    //                 pthread_mutex_lock(&lock);
+    //                 ptr->count++;
+    //                 pthread_mutex_unlock(&lock);
+    //             }
+
+    //             wItr = wItr->next;
+                
+    //             // printf("node: %s\n" ,ptr->Word);
+    //         } 
+    //     }   
+    //     printf("Word: %s Count: %d\n",ptr->Word ,ptr->count);
+    //     ptr = ptr->next;
+    // }
+    //  printf("Items: %d\n" ,ptr->count);
 
     // ThreadMaker("example.txt", 4);
 
